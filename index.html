@@ -3,204 +3,219 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>水准测量自动计算与平差手簿</title>
+    <title>水准测量计算簿 - 双面尺版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        input[type=number]::-webkit-inner-spin-button, 
-        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
-        .table-input { width: 100%; min-width: 60px; background: transparent; border: 1px solid transparent; text-align: center; font-family: 'Courier New', Courier, monospace; font-weight: bold; padding: 6px 2px; border-radius: 4px; transition: all 0.2s; }
+        .table-input { width: 100%; min-width: 60px; background: transparent; border: 1px solid transparent; text-align: center; font-family: 'Courier New', Courier, monospace; font-weight: bold; padding: 4px 2px; transition: all 0.2s; }
         .table-input:focus { border-color: #3b82f6; background: #eff6ff; outline: none; }
         .table-input::placeholder { color: #cbd5e1; font-weight: normal; }
         .sticky-header th { position: sticky; top: 0; background-color: #e5e7eb; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .input-group { border-bottom: 1px dashed #e2e8f0; }
+        .input-group:last-child { border-bottom: none; }
     </style>
 </head>
 <body class="text-gray-800 pb-20">
 
 <div class="max-w-5xl mx-auto p-2 sm:p-4">
     <!-- 头部信息 -->
-    <header class="bg-gradient-to-r from-blue-700 to-cyan-700 text-white p-4 sm:p-5 rounded-xl shadow-lg mb-4 flex justify-between items-center">
+    <header class="bg-gradient-to-r from-blue-800 to-indigo-700 text-white p-4 sm:p-5 rounded-xl shadow-lg mb-4 flex justify-between items-center">
         <div>
-            <h1 class="text-xl sm:text-2xl font-bold tracking-widest"><i class="fas fa-level-up-alt mr-2"></i>水准测量计算簿 <span class="text-xs bg-yellow-400 text-blue-900 px-2 py-0.5 rounded font-black ml-2">PRO版</span></h1>
-            <p class="text-xs sm:text-sm text-blue-100 mt-1">支持往返测/闭合路线 | 自动等级限差判定</p>
+            <h1 class="text-xl sm:text-2xl font-bold tracking-widest"><i class="fas fa-level-up-alt mr-2"></i>水准测绘系统 <span class="text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded font-black ml-1 relative -top-1">双尺版</span></h1>
+            <p class="text-xs sm:text-sm text-blue-200 mt-1">自动判定K常数差(100mm) | 黑红面高差检核</p>
         </div>
-        <button onclick="clearAll()" class="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded text-sm transition">
-            <i class="fas fa-trash-alt mr-1"></i> 重置
+        <button onclick="clearAll()" class="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded text-sm transition font-bold shadow-sm border border-white/20">
+            <i class="fas fa-redo-alt mr-1"></i> 重置数据
         </button>
     </header>
 
-    <!-- 路线配置区 -->
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-4 space-y-4">
-        <div class="flex flex-wrap items-center gap-3">
-            <div class="flex items-center bg-blue-50 border border-blue-200 rounded-lg overflow-hidden max-w-xs">
-                <span class="bg-blue-100 text-blue-800 px-3 py-2 font-bold text-sm whitespace-nowrap border-r border-blue-200"><i class="fas fa-flag text-red-500 mr-1"></i> 起点高程</span>
-                <input type="number" id="start_elevation" value="100.000" class="px-2 py-2 text-base font-mono font-bold text-blue-900 outline-none w-24" oninput="calculate()">
-                <span class="pr-2 text-blue-500 font-bold text-sm">m</span>
-            </div>
-
-            <div class="flex items-center bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
-                <span class="bg-gray-200 text-gray-700 px-3 py-2 font-bold text-sm whitespace-nowrap border-r border-gray-300"><i class="fas fa-route mr-1"></i> 路线</span>
-                <select id="route_type" class="px-2 py-2 text-sm font-bold text-gray-800 outline-none bg-transparent" onchange="toggleRouteType(); calculate()">
-                    <option value="closed">闭合 / 往返测 (终点回起点)</option>
-                    <option value="attached">附合路线 (连已知点)</option>
-                </select>
-            </div>
-
-            <div id="end_elevation_container" class="hidden items-center bg-purple-50 border border-purple-200 rounded-lg overflow-hidden max-w-xs">
-                <span class="bg-purple-100 text-purple-800 px-3 py-2 font-bold text-sm whitespace-nowrap border-r border-purple-200"><i class="fas fa-flag-checkered text-purple-600 mr-1"></i> 终已知高程</span>
-                <input type="number" id="end_elevation" value="100.000" class="px-2 py-2 text-base font-mono font-bold text-purple-900 outline-none w-24 bg-transparent" oninput="calculate()">
-                <span class="pr-2 text-purple-500 font-bold text-sm">m</span>
-            </div>
-            
-            <button onclick="exportCSV()" class="ml-auto bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 px-3 py-2 rounded-lg font-bold text-sm transition whitespace-nowrap shadow-sm">
-                <i class="fas fa-file-excel mr-1"></i> 导出 Excel
-            </button>
+    <!-- 路线与模式配置区 -->
+    <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-200 mb-4 flex flex-wrap gap-2 items-center">
+        <!-- 尺法模式切换 -->
+        <div class="flex items-center bg-gray-100 border border-gray-300 rounded-lg overflow-hidden shrink-0">
+            <span class="bg-gray-200 text-gray-700 px-2 py-2 font-bold text-xs whitespace-nowrap"><i class="fas fa-ruler-combined"></i> 模式</span>
+            <select id="obs_mode" class="px-2 py-2 text-xs font-bold text-gray-800 outline-none bg-transparent" onchange="toggleMode()">
+                <option value="single">单面尺法 (普通)</option>
+                <option value="double" selected>双面尺法 (黑红面)</option>
+            </select>
         </div>
+
+        <div class="flex items-center bg-blue-50 border border-blue-200 rounded-lg overflow-hidden">
+            <span class="bg-blue-100 text-blue-800 px-2 py-2 font-bold text-xs whitespace-nowrap border-r border-blue-200">起点 H0</span>
+            <input type="number" id="start_elevation" value="100.000" class="px-2 py-2 text-sm font-mono font-bold text-blue-900 outline-none w-20 bg-transparent" oninput="calculate()">
+        </div>
+
+        <div class="flex items-center bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+            <select id="route_type" class="px-2 py-2 text-xs font-bold text-gray-800 outline-none bg-transparent" onchange="toggleRouteType(); calculate()">
+                <option value="closed">往返测/闭合路线</option>
+                <option value="attached">附合已知路线</option>
+            </select>
+        </div>
+
+        <div id="end_elevation_container" class="hidden items-center bg-purple-50 border border-purple-200 rounded-lg overflow-hidden">
+            <span class="bg-purple-100 text-purple-800 px-2 py-2 font-bold text-xs whitespace-nowrap border-r border-purple-200">终点 H</span>
+            <input type="number" id="end_elevation" value="100.000" class="px-2 py-2 text-sm font-mono font-bold text-purple-900 outline-none w-20 bg-transparent" oninput="calculate()">
+        </div>
+        
+        <button onclick="exportCSV()" class="ml-auto bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 px-3 py-2 rounded-lg font-bold text-xs transition shadow-sm">
+            <i class="fas fa-file-csv mr-1"></i> 导出表
+        </button>
     </div>
 
     <!-- 核心表格区 -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-4 relative">
         <div class="overflow-x-auto">
-            <table class="w-full text-sm text-center border-collapse whitespace-nowrap">
-                <thead class="sticky-header text-gray-700">
+            <table class="w-full text-center border-collapse whitespace-nowrap">
+                <thead class="sticky-header text-gray-700 text-xs">
                     <tr>
-                        <th class="p-2 border-b border-gray-300 w-10">#</th>
-                        <th class="p-2 border-b border-gray-300 border-l border-gray-200 min-w-[80px]">点号/测站</th>
-                        <th class="p-2 border-b border-gray-300 border-l border-blue-200 bg-blue-50/50">后视读数(a)</th>
-                        <th class="p-2 border-b border-gray-300 border-l border-blue-200 bg-blue-50/50">前视读数(b)</th>
-                        <th class="p-2 border-b border-gray-300 border-l border-gray-200 bg-gray-50">高差(h)</th>
-                        <th class="p-2 border-b border-gray-300 border-l border-gray-200 bg-emerald-50/50">推算高程(H)</th>
-                        <th class="p-2 border-b border-gray-300 border-l border-gray-200 w-20">操作</th>
+                        <th class="p-1.5 border-b border-gray-300 w-8">#</th>
+                        <th class="p-1.5 border-b border-gray-300 border-l border-gray-200 min-w-[70px]">测点</th>
+                        <th class="p-1.5 border-b border-gray-300 border-l border-blue-200 bg-blue-50/50">
+                            <div class="text-gray-800">后视 (a)</div>
+                            <div class="text-[9px] font-normal text-gray-500 double-only">上:黑面 | 下:红面</div>
+                        </th>
+                        <th class="p-1.5 border-b border-gray-300 border-l border-blue-200 bg-blue-50/50">
+                            <div class="text-gray-800">前视 (b)</div>
+                            <div class="text-[9px] font-normal text-gray-500 double-only">上:黑面 | 下:红面</div>
+                        </th>
+                        <th class="p-1.5 border-b border-gray-300 border-l border-gray-200 bg-gray-50">
+                            高差/中数(h)
+                        </th>
+                        <th class="p-1.5 border-b border-gray-300 border-l border-gray-200 bg-emerald-50/50">推算高程(H)</th>
+                        <th class="p-1.5 border-b border-gray-300 border-l border-gray-200 w-16">操作</th>
                     </tr>
                 </thead>
                 <tbody id="table_body" class="text-gray-600"></tbody>
             </table>
         </div>
         <div class="p-2 bg-gray-50 border-t border-gray-200 flex justify-center">
-            <button onclick="addRowAtEnd()" class="bg-white border-2 border-dashed border-gray-300 text-gray-500 hover:border-blue-400 hover:text-blue-500 w-full max-w-md py-2 rounded-lg font-bold transition flex items-center justify-center text-sm">
-                <i class="fas fa-plus-circle mr-2"></i> 延续测量路线 (添加下一站)
+            <button onclick="addRowAtEnd()" class="bg-white border-2 border-dashed border-gray-300 text-gray-500 hover:border-blue-400 hover:text-blue-500 w-full max-w-sm py-2 rounded-lg font-bold transition flex items-center justify-center text-sm shadow-sm">
+                <i class="fas fa-plus-circle mr-2"></i> 延续测量路线 (下一站)
             </button>
         </div>
     </div>
 
-    <!-- 数据与精度检核区 -->
+    <!-- 精度与检核区 -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- 1. 测站计算闭合检查 -->
-        <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 shadow-sm">
-            <h3 class="text-sm font-bold text-indigo-800 mb-3"><i class="fas fa-calculator mr-1"></i> 手簿数学检核 <span class="text-xs font-normal text-indigo-500 ml-2">( 理论: ∑a - ∑b = ∑h )</span></h3>
-            <div class="grid grid-cols-3 gap-2 text-xs font-mono mb-2">
-                <div class="bg-white p-1.5 border border-indigo-100 rounded text-center shadow-sm"><div class="text-gray-400">∑后视(a)</div><div id="sum_a" class="font-bold text-blue-700 text-sm">0.000</div></div>
-                <div class="bg-white p-1.5 border border-indigo-100 rounded text-center shadow-sm"><div class="text-gray-400">∑前视(b)</div><div id="sum_b" class="font-bold text-orange-600 text-sm">0.000</div></div>
-                <div class="bg-white p-1.5 border border-indigo-100 rounded text-center shadow-sm"><div class="text-gray-400">∑高差(h)</div><div id="sum_h" class="font-bold text-gray-800 text-sm">0.000</div></div>
-            </div>
-            <div id="check_status" class="text-center text-xs text-indigo-500 font-bold bg-white border border-indigo-100 rounded py-1.5">等待测点数据...</div>
-        </div>
-
-        <!-- 2. 工程规范限差判定 -->
         <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 shadow-sm relative overflow-hidden">
             <div class="absolute top-0 right-0 bg-yellow-200 text-yellow-800 text-[10px] font-black px-2 py-0.5 rounded-bl-lg">规范判定</div>
-            <h3 class="text-sm font-bold text-yellow-800 mb-3"><i class="fas fa-balance-scale mr-1"></i> 闭合差判定 (W)</h3>
+            <h3 class="text-sm font-bold text-yellow-800 mb-3"><i class="fas fa-balance-scale mr-1"></i> 全线闭合差判定 (W)</h3>
             
-            <div class="flex flex-wrap gap-2 mb-3">
-                <select id="level_grade" class="border border-yellow-300 bg-white text-yellow-900 text-xs font-bold rounded px-2 py-1 outline-none" onchange="calculate()">
-                    <option value="4">四等水准 (常用)</option>
-                    <option value="5">等外/图根 (放样)</option>
-                    <option value="3">三等水准 (精密)</option>
+            <div class="flex gap-2 mb-3">
+                <select id="level_grade" class="border border-yellow-300 bg-white text-yellow-900 text-xs font-bold rounded px-1.5 py-1 outline-none flex-1" onchange="calculate()">
+                    <option value="4">四等水准</option>
+                    <option value="5">等外/图根</option>
+                    <option value="3">三等水准</option>
                 </select>
-                
-                <select id="limit_type" class="border border-yellow-300 bg-white text-yellow-900 text-xs font-bold rounded px-2 py-1 outline-none" onchange="toggleLimitInput(); calculate()">
-                    <option value="station">按测站数 (√n)</option>
-                    <option value="length">按路线长 (√L)</option>
+                <select id="limit_type" class="border border-yellow-300 bg-white text-yellow-900 text-xs font-bold rounded px-1.5 py-1 outline-none flex-1" onchange="toggleLimitInput(); calculate()">
+                    <option value="station">按测站 (√n)</option>
+                    <option value="length">按公里 (√L)</option>
                 </select>
-
-                <div id="length_input_container" class="hidden items-center border border-yellow-300 bg-white rounded px-1">
-                    <input type="number" id="route_length" class="w-12 text-xs font-bold text-center outline-none bg-transparent" value="1.0" oninput="calculate()">
-                    <span class="text-[10px] text-gray-500 pr-1 font-bold">km</span>
-                </div>
+                <input type="number" id="route_length" class="hidden w-14 border border-yellow-300 bg-white rounded px-1 text-xs font-bold text-center outline-none" value="1.0" placeholder="km" oninput="calculate()">
             </div>
 
             <div class="flex items-center justify-between bg-white border border-yellow-200 rounded-lg p-2 shadow-inner">
-                <div class="text-center px-2 border-r border-gray-100">
-                    <div class="text-[10px] text-gray-400 font-bold mb-0.5">总站数 n</div>
+                <div class="text-center px-1 border-r border-gray-100 flex-1">
+                    <div class="text-[10px] text-gray-400 font-bold mb-0.5">总测站 n</div>
                     <div id="station_count" class="font-mono font-black text-gray-700 text-sm">0</div>
                 </div>
-                <div class="text-center px-2 border-r border-gray-100">
+                <div class="text-center px-1 border-r border-gray-100 flex-1">
                     <div class="text-[10px] text-gray-400 font-bold mb-0.5">实测 W</div>
-                    <div id="actual_w" class="font-mono font-black text-blue-600 text-base">0 <span class="text-[10px]">mm</span></div>
+                    <div id="actual_w" class="font-mono font-black text-blue-600 text-base">0<span class="text-[10px] font-normal">mm</span></div>
                 </div>
-                <div class="text-center px-2">
-                    <div class="text-[10px] text-gray-400 font-bold mb-0.5">容许限差 Fh</div>
-                    <div id="allowed_w" class="font-mono font-black text-orange-500 text-sm">±0 <span class="text-[10px]">mm</span></div>
+                <div class="text-center px-1 flex-1">
+                    <div class="text-[10px] text-gray-400 font-bold mb-0.5">容许限差</div>
+                    <div id="allowed_w" class="font-mono font-black text-orange-500 text-sm">±0<span class="text-[10px] font-normal">mm</span></div>
                 </div>
             </div>
+            <div id="w_result" class="mt-3 text-center text-xs font-black py-1.5 rounded bg-gray-100 text-gray-400 border border-gray-200">等待形成完整路线...</div>
+        </div>
 
-            <div id="w_result" class="mt-3 text-center text-xs font-black py-1.5 rounded bg-gray-100 text-gray-400 border border-gray-200">
-                等待形成完整路线...
+        <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 shadow-sm">
+            <h3 class="text-sm font-bold text-indigo-800 mb-2"><i class="fas fa-calculator mr-1"></i> 手簿数学累加检核</h3>
+            <div class="text-[10px] text-indigo-400 mb-2 font-bold">理论上：∑h(高差中数) ≈ ∑a(黑) - ∑b(黑)</div>
+            <div class="grid grid-cols-3 gap-2 text-xs font-mono mb-2">
+                <div class="bg-white p-1.5 border border-indigo-100 rounded text-center shadow-sm"><div class="text-gray-400">∑后视(a黑)</div><div id="sum_a" class="font-bold text-blue-700 text-sm">0.000</div></div>
+                <div class="bg-white p-1.5 border border-indigo-100 rounded text-center shadow-sm"><div class="text-gray-400">∑前视(b黑)</div><div id="sum_b" class="font-bold text-orange-600 text-sm">0.000</div></div>
+                <div class="bg-white p-1.5 border border-indigo-100 rounded text-center shadow-sm"><div class="text-gray-400">∑高差(h)</div><div id="sum_h" class="font-bold text-gray-800 text-sm">0.000</div></div>
             </div>
+            <div id="check_status" class="text-center text-xs text-indigo-500 font-bold bg-white border border-indigo-100 rounded py-1.5 shadow-sm">等待测点数据...</div>
         </div>
     </div>
 </div>
 
 <script>
-    // 默认提供一段“往返测”雏形示例数据，帮助用户理解
+    // 数据模型扩充了红面读数 (bs_r = backsight red, fs_r = foresight red)
     let rowsData = [
-        { id: generateId(), point: "BM_A", backsight: "1.452", foresight: "" },
-        { id: generateId(), point: "TP1", backsight: "1.688", foresight: "1.233" },
-        { id: generateId(), point: "折返B", backsight: "1.211", foresight: "1.541" },
-        { id: generateId(), point: "TP2(返)", backsight: "1.344", foresight: "1.666" },
-        { id: generateId(), point: "BM_A", backsight: "", foresight: "1.258" }
+        { id: generateId(), point: "BM_A", bs: "1.452", fs: "", bs_r: "6.139", fs_r: "" },
+        { id: generateId(), point: "TP1", bs: "1.688", fs: "1.233", bs_r: "6.475", fs_r: "6.020" },
+        { id: generateId(), point: "TP2", bs: "", fs: "1.258", bs_r: "", fs_r: "5.945" }
     ];
 
     function generateId() { return Math.random().toString(36).substr(2, 9); }
     function formatNum(num) { return (num === null || num === undefined || isNaN(num)) ? "" : parseFloat(num).toFixed(3); }
 
     function toggleRouteType() {
-        const type = document.getElementById('route_type').value;
-        const endBox = document.getElementById('end_elevation_container');
-        if(type === 'attached') { endBox.style.display = 'flex'; } 
-        else { endBox.style.display = 'none'; }
+        document.getElementById('end_elevation_container').style.display = document.getElementById('route_type').value === 'attached' ? 'flex' : 'none';
     }
 
     function toggleLimitInput() {
         const type = document.getElementById('limit_type').value;
-        const lenBox = document.getElementById('length_input_container');
-        if(type === 'length') { lenBox.style.display = 'flex'; } 
-        else { lenBox.style.display = 'none'; }
+        const lenBox = document.getElementById('route_length');
+        if(type === 'length') { lenBox.classList.remove('hidden'); lenBox.classList.add('block'); } 
+        else { lenBox.classList.remove('block'); lenBox.classList.add('hidden'); }
     }
 
+    function toggleMode() {
+        const mode = document.getElementById('obs_mode').value;
+        document.querySelectorAll('.double-only').forEach(el => el.style.display = (mode === 'double' ? 'block' : 'none'));
+        renderTable();
+    }
+
+    // 渲染表格
     function renderTable() {
         const tbody = document.getElementById('table_body');
+        const mode = document.getElementById('obs_mode').value;
         tbody.innerHTML = '';
 
         rowsData.forEach((row, index) => {
             const tr = document.createElement('tr');
-            tr.className = "hover:bg-blue-50/50 transition border-b border-gray-100";
+            tr.className = "hover:bg-blue-50/50 transition border-b border-gray-200 bg-white";
             
             const isFirst = index === 0;
             const isLast = index === rowsData.length - 1;
 
+            // 动态生成输入框结构（单面或双面尺）
+            let bsInputHtml = '', fsInputHtml = '';
+            
+            if (mode === 'double') {
+                bsInputHtml = `
+                    <div class="input-group"><input type="number" step="0.001" class="table-input text-gray-800 text-[13px] ${isLast ? 'bg-gray-100 cursor-not-allowed opacity-50' : ''}" value="${row.bs}" placeholder="${isLast ? '终' : '黑'}" ${isLast ? 'disabled' : ''} oninput="updateData('${row.id}', 'bs', this.value)"></div>
+                    <div class="input-group"><input type="number" step="0.001" class="table-input text-red-600 text-[13px] ${isLast ? 'bg-gray-100 cursor-not-allowed opacity-50' : ''}" value="${row.bs_r}" placeholder="${isLast ? '-' : '红'}" ${isLast ? 'disabled' : ''} oninput="updateData('${row.id}', 'bs_r', this.value)"></div>
+                `;
+                fsInputHtml = `
+                    <div class="input-group"><input type="number" step="0.001" class="table-input text-gray-800 text-[13px] ${isFirst ? 'bg-gray-100 cursor-not-allowed opacity-50' : ''}" value="${row.fs}" placeholder="${isFirst ? '起' : '黑'}" ${isFirst ? 'disabled' : ''} oninput="updateData('${row.id}', 'fs', this.value)"></div>
+                    <div class="input-group"><input type="number" step="0.001" class="table-input text-red-600 text-[13px] ${isFirst ? 'bg-gray-100 cursor-not-allowed opacity-50' : ''}" value="${row.fs_r}" placeholder="${isFirst ? '-' : '红'}" ${isFirst ? 'disabled' : ''} oninput="updateData('${row.id}', 'fs_r', this.value)"></div>
+                `;
+            } else {
+                bsInputHtml = `<input type="number" step="0.001" class="table-input text-blue-700 text-sm py-2 ${isLast ? 'bg-gray-100 cursor-not-allowed opacity-50' : ''}" value="${row.bs}" placeholder="${isLast ? '(终点无)' : '-'}" ${isLast ? 'disabled' : ''} oninput="updateData('${row.id}', 'bs', this.value)">`;
+                fsInputHtml = `<input type="number" step="0.001" class="table-input text-orange-600 text-sm py-2 ${isFirst ? 'bg-gray-100 cursor-not-allowed opacity-50' : ''}" value="${row.fs}" placeholder="${isFirst ? '(起点无)' : '-'}" ${isFirst ? 'disabled' : ''} oninput="updateData('${row.id}', 'fs', this.value)">`;
+            }
+
             tr.innerHTML = `
-                <td class="p-1 border-l border-gray-100 text-gray-400 font-bold text-xs">${index + 1}</td>
-                <td class="p-0 border-l border-gray-200">
-                    <input type="text" class="table-input text-xs" value="${row.point}" placeholder="点名" onchange="updateData('${row.id}', 'point', this.value)">
-                </td>
-                <td class="p-0 border-l border-blue-100 bg-blue-50/20">
-                    <input type="number" step="0.001" class="table-input text-blue-700" value="${row.backsight}" placeholder="${isLast ? '(终点无需)' : '-'}" 
-                           oninput="updateData('${row.id}', 'backsight', this.value)">
-                </td>
-                <td class="p-0 border-l border-blue-100 bg-blue-50/20">
-                    <input type="number" step="0.001" class="table-input text-orange-600" value="${row.foresight}" placeholder="${isFirst ? '(起点无)' : '-'}" 
-                           ${isFirst ? 'disabled class="table-input opacity-40 bg-gray-100 cursor-not-allowed"' : ''}
-                           oninput="updateData('${row.id}', 'foresight', this.value)">
-                </td>
-                <td class="p-1 border-l border-gray-200 bg-gray-50/50 font-mono font-bold text-xs" id="diff_${row.id}">-</td>
-                <td class="p-1 border-l border-gray-200 bg-emerald-50/20 font-mono font-black text-gray-800 text-xs" id="elev_${row.id}">-</td>
-                <td class="p-1 border-l border-gray-200">
-                    <div class="flex justify-center gap-1.5">
-                        <button onclick="insertRowBelow(${index})" title="在此下方加一站" class="w-6 h-6 rounded bg-blue-100 text-blue-600 hover:bg-blue-500 hover:text-white transition flex items-center justify-center text-xs"><i class="fas fa-level-down-alt"></i></button>
-                        <button onclick="deleteRow(${index})" title="删除" class="w-6 h-6 rounded bg-red-100 text-red-500 hover:bg-red-500 hover:text-white transition flex items-center justify-center text-xs ${rowsData.length <= 2 ? 'opacity-30 cursor-not-allowed' : ''}" ${rowsData.length <= 2 ? 'disabled' : ''}><i class="fas fa-times"></i></button>
+                <td class="p-1 border-l border-gray-200 text-gray-400 font-bold text-[11px]">${index + 1}</td>
+                <td class="p-0 border-l border-gray-200"><input type="text" class="table-input text-xs font-bold text-gray-800" value="${row.point}" placeholder="名称" onchange="updateData('${row.id}', 'point', this.value)"></td>
+                <td class="p-0 border-l border-blue-100 bg-blue-50/20 align-top">${bsInputHtml}</td>
+                <td class="p-0 border-l border-blue-100 bg-blue-50/20 align-top">${fsInputHtml}</td>
+                <td class="p-1 border-l border-gray-200 bg-gray-50/50 align-middle text-center" id="diff_cell_${row.id}">-</td>
+                <td class="p-1 border-l border-gray-200 bg-emerald-50/20 font-mono font-black text-gray-800 text-[13px] align-middle" id="elev_${row.id}">-</td>
+                <td class="p-1 border-l border-gray-200 align-middle">
+                    <div class="flex justify-center gap-1">
+                        <button onclick="insertRowBelow(${index})" class="w-6 h-6 rounded bg-blue-100 text-blue-600 hover:bg-blue-500 hover:text-white transition flex items-center justify-center text-xs"><i class="fas fa-level-down-alt"></i></button>
+                        <button onclick="deleteRow(${index})" class="w-6 h-6 rounded bg-red-100 text-red-500 hover:bg-red-500 hover:text-white transition flex items-center justify-center text-xs ${rowsData.length <= 2 ? 'opacity-30 cursor-not-allowed' : ''}" ${rowsData.length <= 2 ? 'disabled' : ''}><i class="fas fa-trash"></i></button>
                     </div>
                 </td>
             `;
@@ -212,105 +227,129 @@
 
     function updateData(id, field, value) {
         const rowIndex = rowsData.findIndex(r => r.id === id);
-        if (rowIndex !== -1) {
-            rowsData[rowIndex][field] = value;
-            if (field !== 'point') calculate(); 
-        }
+        if (rowIndex !== -1) { rowsData[rowIndex][field] = value; if (field !== 'point') calculate(); }
     }
 
-    function insertRowBelow(index) {
-        rowsData.splice(index + 1, 0, { id: generateId(), point: `TP`, backsight: "", foresight: "" });
-        renderTable();
-    }
-
-    function addRowAtEnd() {
-        rowsData.push({ id: generateId(), point: `TP`, backsight: "", foresight: "" });
-        renderTable();
-        setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
-    }
-
-    function deleteRow(index) {
-        if (rowsData.length <= 2) return; 
-        if (confirm(`删除 第${index + 1}测点 (${rowsData[index].point}) 吗？`)) {
-            rowsData.splice(index, 1);
-            renderTable();
-        }
-    }
-
+    function insertRowBelow(index) { rowsData.splice(index + 1, 0, { id: generateId(), point: `TP`, bs: "", fs: "", bs_r: "", fs_r: "" }); renderTable(); }
+    function addRowAtEnd() { rowsData.push({ id: generateId(), point: `TP`, bs: "", fs: "", bs_r: "", fs_r: "" }); renderTable(); setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100); }
+    function deleteRow(index) { if (rowsData.length <= 2) return; if (confirm(`删除 第${index + 1}点 吗？`)) { rowsData.splice(index, 1); renderTable(); } }
+    
     function clearAll() {
-        if (confirm("清空并重置为空白手簿？")) {
-            rowsData = [
-                { id: generateId(), point: "BM_A", backsight: "", foresight: "" },
-                { id: generateId(), point: "TP1", backsight: "", foresight: "" }
-            ];
+        if (confirm("清空重置？")) {
+            rowsData = [ { id: generateId(), point: "BM_A", bs: "", fs: "", bs_r: "", fs_r: "" }, { id: generateId(), point: "TP1", bs: "", fs: "", bs_r: "", fs_r: "" } ];
             renderTable();
         }
     }
 
-    // 核心计算网络
+    // 核心网络平差与容错计算
     function calculate() {
         const startElev = parseFloat(document.getElementById('start_elevation').value);
+        const mode = document.getElementById('obs_mode').value;
+        const grade = document.getElementById('level_grade').value;
+        
+        // 站内红黑面高差限差 (4等=5mm, 3等=3mm, 图根宽松=10mm)
+        const stationLimit = grade === '3' ? 3 : (grade === '4' ? 5 : 10);
+
         if (isNaN(startElev)) return;
 
         let currentElev = startElev;
         let sumA = 0, sumB = 0, sumH = 0;
-        let chainIntact = true; // 链路是否完整不断开
-        let stationCount = 0;   // 实际产生的测站数
+        let chainIntact = true; 
+        let stationCount = 0;   
 
         for (let i = 0; i < rowsData.length; i++) {
             const row = rowsData[i];
-            const elemDiff = document.getElementById(`diff_${row.id}`);
+            const diffCell = document.getElementById(`diff_cell_${row.id}`);
             const elemElev = document.getElementById(`elev_${row.id}`);
             
-            // 第一行
             if (i === 0) {
-                elemDiff.innerHTML = '<span class="text-gray-300">-</span>';
+                diffCell.innerHTML = '<span class="text-gray-300 text-xs">-</span>';
                 elemElev.innerText = formatNum(currentElev);
-                elemElev.className = "p-1 border-l border-gray-200 bg-emerald-100/80 font-mono font-black text-emerald-800 text-xs"; 
+                elemElev.className = "p-1 border-l border-gray-200 bg-emerald-100/80 font-mono font-black text-emerald-800 text-[13px] align-middle"; 
                 
-                let bs = parseFloat(row.backsight);
-                if (!isNaN(bs)) sumA += bs;
+                let bs = parseFloat(row.bs);
+                if (!isNaN(bs)) sumA += bs; // 检核只累加黑面
                 continue;
             }
 
             const prevRow = rowsData[i - 1];
-            const prevBacksight = parseFloat(prevRow.backsight);
-            const currentForesight = parseFloat(row.foresight);
-            const currentBacksight = parseFloat(row.backsight);
+            const bs_b = parseFloat(prevRow.bs); // 前一站后黑
+            const fs_b = parseFloat(row.fs);     // 当前站前黑
 
-            if (!isNaN(prevBacksight) && !isNaN(currentForesight)) {
-                // 有效测站
+            if (!isNaN(bs_b) && !isNaN(fs_b)) {
                 stationCount++;
-                const diff = prevBacksight - currentForesight;
-                
-                if (diff > 0) elemDiff.innerHTML = `<span class="text-emerald-600">+${formatNum(diff)}</span>`;
-                else if (diff < 0) elemDiff.innerHTML = `<span class="text-red-500">${formatNum(diff)}</span>`;
-                else elemDiff.innerText = "0.000";
+                let h_final = 0;
+                let htmlDiff = '';
 
-                sumB += currentForesight;
-                sumH += diff;
+                // 黑面高差计算
+                const h_black = bs_b - fs_b;
 
-                currentElev = currentElev + diff;
-                
-                // 终点视觉强化
-                if (i === rowsData.length - 1) {
-                    elemElev.className = "p-1 border-l border-gray-200 bg-purple-100/80 font-mono font-black text-purple-800 text-xs";
+                if (mode === 'double') {
+                    const bs_r = parseFloat(prevRow.bs_r);
+                    const fs_r = parseFloat(row.fs_r);
+                    
+                    if (!isNaN(bs_r) && !isNaN(fs_r)) {
+                        const h_red = bs_r - fs_r;
+                        // 智能判断尺常数差(红面与黑面一般差 ±0.1m)
+                        let k_offset = 0;
+                        const diff_raw = h_black - h_red;
+                        if (diff_raw > 0.05) k_offset = 0.100;
+                        else if (diff_raw < -0.05) k_offset = -0.100;
+                        
+                        const h_red_adj = h_red + k_offset;
+                        const delta_h_mm = Math.round(Math.abs(h_black - h_red_adj) * 1000);
+                        
+                        // 高差中数
+                        h_final = (h_black + h_red_adj) / 2;
+                        
+                        const colorClass = h_final > 0 ? 'text-emerald-600' : (h_final < 0 ? 'text-red-500' : 'text-gray-800');
+                        const sign = h_final > 0 ? '+' : '';
+                        
+                        // 判定站内误差
+                        let badgeHtml = '';
+                        if (delta_h_mm > stationLimit) {
+                            badgeHtml = `<div class="text-[9px] bg-red-100 text-red-600 font-bold px-1 rounded mt-0.5 border border-red-200">超限 Δ=${delta_h_mm}</div>`;
+                        } else {
+                            badgeHtml = `<div class="text-[9px] text-emerald-500 font-normal mt-0.5">Δ=${delta_h_mm}mm</div>`;
+                        }
+
+                        htmlDiff = `<div class="font-mono font-black ${colorClass} text-[13px] leading-tight">${sign}${h_final.toFixed(3)}</div>${badgeHtml}`;
+                    } else {
+                        // 红面未填完，只显示黑面
+                        h_final = h_black;
+                        const colorClass = h_final > 0 ? 'text-emerald-600' : (h_final < 0 ? 'text-red-500' : 'text-gray-800');
+                        const sign = h_final > 0 ? '+' : '';
+                        htmlDiff = `<div class="font-mono font-black ${colorClass} text-[13px] leading-tight">${sign}${h_final.toFixed(3)}</div><div class="text-[9px] text-orange-400">单算黑面</div>`;
+                    }
                 } else {
-                    elemElev.className = "p-1 border-l border-gray-200 bg-emerald-50/20 font-mono font-black text-gray-800 text-xs";
+                    // 单面尺模式
+                    h_final = h_black;
+                    const colorClass = h_final > 0 ? 'text-emerald-600' : (h_final < 0 ? 'text-red-500' : 'text-gray-800');
+                    const sign = h_final > 0 ? '+' : '';
+                    htmlDiff = `<div class="font-mono font-black ${colorClass} text-[13px]">${sign}${h_final.toFixed(3)}</div>`;
                 }
+
+                diffCell.innerHTML = htmlDiff;
+                sumB += fs_b; // 检核只累加黑面前视
+                sumH += h_final;
+
+                currentElev = currentElev + h_final;
+                elemElev.className = (i === rowsData.length - 1) 
+                    ? "p-1 border-l border-gray-200 bg-purple-100/80 font-mono font-black text-purple-800 text-[13px] align-middle"
+                    : "p-1 border-l border-gray-200 bg-emerald-50/20 font-mono font-black text-gray-800 text-[13px] align-middle";
                 elemElev.innerText = formatNum(currentElev);
                 
             } else {
                 chainIntact = false;
-                elemDiff.innerHTML = '<span class="text-gray-300">待测</span>';
-                elemElev.innerHTML = '<span class="text-gray-300">缺数</span>';
+                diffCell.innerHTML = '<span class="text-gray-300 text-[11px]">待测</span>';
+                elemElev.innerHTML = '<span class="text-gray-300 text-[11px]">缺数</span>';
                 currentElev = NaN;
             }
 
-            if (!isNaN(currentBacksight)) sumA += currentBacksight;
+            if (!isNaN(parseFloat(row.bs))) sumA += parseFloat(row.bs);
         }
 
-        // --- 1. 更新手簿数学检核 ---
+        // --- 全局检核更新 ---
         document.getElementById('sum_a').innerText = formatNum(sumA);
         document.getElementById('sum_b').innerText = formatNum(sumB);
         document.getElementById('sum_h').innerText = formatNum(sumH);
@@ -320,123 +359,130 @@
         const statusElem = document.getElementById('check_status');
         
         if (sumA === 0 && sumB === 0) {
-            statusElem.innerText = "等待输入测站读数...";
-            statusElem.className = "text-center text-xs text-indigo-500 font-bold bg-white border border-indigo-100 rounded py-1.5";
-        } else if (diffDiff < 0.001) {
-            statusElem.innerHTML = "<i class='fas fa-check-circle'></i> 运算无误 (∑a - ∑b = ∑h)";
+            statusElem.innerHTML = "等待输入...";
+            statusElem.className = "text-center text-xs text-indigo-400 font-bold bg-white border border-indigo-100 rounded py-1.5";
+        } else if (diffDiff < 0.05) { // 因为使用了中数，所以此处检核放宽容差
+            statusElem.innerHTML = "<i class='fas fa-check-circle'></i> 运算闭合";
             statusElem.className = "text-center text-xs text-emerald-600 font-bold bg-emerald-50 border border-emerald-200 rounded py-1.5 shadow-sm";
         } else {
-            statusElem.innerHTML = "<i class='fas fa-exclamation-triangle'></i> 链路断开或数据不全！";
+            statusElem.innerHTML = "<i class='fas fa-exclamation-triangle'></i> 链路断开或异常";
             statusElem.className = "text-center text-xs text-red-500 font-bold bg-red-50 border border-red-200 rounded py-1.5 shadow-sm";
         }
 
-        // --- 2. 闭合差判定逻辑 ---
+        // --- 闭合差判定 (W) ---
         document.getElementById('station_count').innerText = stationCount;
         const wResultBox = document.getElementById('w_result');
         const actWBox = document.getElementById('actual_w');
         const allWBox = document.getElementById('allowed_w');
 
         if (!chainIntact || stationCount === 0) {
-            actWBox.innerHTML = `0 <span class="text-[10px]">mm</span>`;
-            allWBox.innerHTML = `±0 <span class="text-[10px]">mm</span>`;
-            wResultBox.innerHTML = "填满前后视读数后自动判定";
+            actWBox.innerHTML = `0<span class="text-[10px] font-normal">mm</span>`;
+            allWBox.innerHTML = `±0<span class="text-[10px] font-normal">mm</span>`;
+            wResultBox.innerHTML = "填满黑面读数后自动判定路线";
             wResultBox.className = "mt-3 text-center text-xs font-black py-1.5 rounded bg-gray-100 text-gray-400 border border-gray-200";
             return;
         }
 
-        // 计算理论高差
         let theoretical_h = 0;
-        const routeType = document.getElementById('route_type').value;
-        if (routeType === 'attached') {
+        if (document.getElementById('route_type').value === 'attached') {
             const endElev = parseFloat(document.getElementById('end_elevation').value) || 0;
             theoretical_h = endElev - startElev;
-        } // 若是 closed (闭合/往返)，理论高差就是 0
-
-        // 实测闭合差 W = (实测高差 - 理论高差) * 1000  (单位转换成毫米)
+        } 
+        
         const actual_w = (sumH - theoretical_h) * 1000;
-        actWBox.innerHTML = `${(actual_w>0?'+':'')}${actual_w.toFixed(1)} <span class="text-[10px]">mm</span>`;
+        actWBox.innerHTML = `${(actual_w>0?'+':'')}${actual_w.toFixed(1)}<span class="text-[10px] font-normal">mm</span>`;
 
-        // 规范容许限差 Fh
-        const grade = document.getElementById('level_grade').value;
         const limitType = document.getElementById('limit_type').value;
         let fh = 0;
-
         if (limitType === 'station') {
-            // 按测站: 3等: 12√n, 4等: 20√L 或 6√n 这里通常四等采用 6√n(也有说是5√n具体看规范版本，取国标常规平地建筑 6√n), 等外 12√n
-            let coef = 6; 
-            if (grade === '3') coef = 4;
-            if (grade === '4') coef = 6;
-            if (grade === '5') coef = 12;
+            let coef = grade === '3' ? 4 : (grade === '4' ? 6 : 12);
             fh = coef * Math.sqrt(stationCount);
         } else {
-            // 按长度L: 3等: 12√L, 4等: 20√L, 等外: 40√L
             const L = parseFloat(document.getElementById('route_length').value) || 0;
-            let coef = 20;
-            if (grade === '3') coef = 12;
-            if (grade === '4') coef = 20;
-            if (grade === '5') coef = 40;
+            let coef = grade === '3' ? 12 : (grade === '4' ? 20 : 40);
             fh = coef * Math.sqrt(L);
         }
+        allWBox.innerHTML = `±${fh.toFixed(1)}<span class="text-[10px] font-normal">mm</span>`;
 
-        allWBox.innerHTML = `±${fh.toFixed(1)} <span class="text-[10px]">mm</span>`;
-
-        // 判定结果
         if (Math.abs(actual_w) <= fh) {
             wResultBox.innerHTML = "<i class='fas fa-shield-check mr-1 text-lg'></i> 闭合差合格 (限差内)";
             wResultBox.className = "mt-3 text-center text-sm font-black py-2 rounded bg-emerald-500 text-white shadow-md border border-emerald-600 animate-pulse";
         } else {
-            wResultBox.innerHTML = "<i class='fas fa-times-circle mr-1 text-lg'></i> 闭合差超限，需重测！";
+            wResultBox.innerHTML = "<i class='fas fa-times-circle mr-1 text-lg'></i> 闭合差超限，全线需重测";
             wResultBox.className = "mt-3 text-center text-sm font-black py-2 rounded bg-red-600 text-white shadow-md border border-red-700 animate-bounce";
         }
     }
 
     function exportCSV() {
+        const mode = document.getElementById('obs_mode').value;
         let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-        csvContent += "点号,后视读数(a),前视读数(b),实测高差(h),推算高程(H)\n";
+        
+        if (mode === 'double') {
+            csvContent += "点号,后视黑(a),后视红,前视黑(b),前视红,高差黑(m),高差红(m),黑红高差差(mm),高差中数(h),推算高程(H)\n";
+        } else {
+            csvContent += "点号,后视(a),前视(b),高差(h),推算高程(H)\n";
+        }
         
         const startElev = parseFloat(document.getElementById('start_elevation').value) || 0;
         let currentElev = startElev;
 
         rowsData.forEach((row, i) => {
-            let h = "";
-            let H = "";
-            if (i === 0) {
-                H = startElev.toFixed(3);
-            } else {
-                const prevA = parseFloat(rowsData[i-1].backsight);
-                const currB = parseFloat(row.foresight);
-                if(!isNaN(prevA) && !isNaN(currB)){
-                    let diff = prevA - currB;
-                    h = diff.toFixed(3);
-                    currentElev += diff;
-                    H = currentElev.toFixed(3);
+            let H = (i === 0) ? startElev.toFixed(3) : "";
+            if (mode === 'double') {
+                let h_b="", h_r="", delta_mm="", h_mean="";
+                if (i > 0) {
+                    const prevA = parseFloat(rowsData[i-1].bs), prevAr = parseFloat(rowsData[i-1].bs_r);
+                    const currB = parseFloat(row.fs), currBr = parseFloat(row.fs_r);
+                    if (!isNaN(prevA) && !isNaN(currB)) {
+                        let h_black = prevA - currB;
+                        h_b = h_black.toFixed(3);
+                        h_mean = h_black;
+                        if (!isNaN(prevAr) && !isNaN(currBr)) {
+                            let h_red = prevAr - currBr;
+                            h_r = h_red.toFixed(3);
+                            let k_offset = 0;
+                            let raw = h_black - h_red;
+                            if (raw > 0.05) k_offset = 0.1;
+                            else if (raw < -0.05) k_offset = -0.1;
+                            let h_red_adj = h_red + k_offset;
+                            delta_mm = Math.round((h_black - h_red_adj) * 1000);
+                            h_mean = (h_black + h_red_adj) / 2;
+                        }
+                        currentElev += h_mean;
+                        H = currentElev.toFixed(3);
+                        h_mean = h_mean.toFixed(3);
+                    }
                 }
+                csvContent += `${row.point},${row.bs},${row.bs_r},${row.fs},${row.fs_r},${h_b},${h_r},${delta_mm},${h_mean},${H}\n`;
+            } else {
+                let h = "";
+                if (i > 0) {
+                    const prevA = parseFloat(rowsData[i-1].bs), currB = parseFloat(row.fs);
+                    if (!isNaN(prevA) && !isNaN(currB)) {
+                        let diff = prevA - currB;
+                        h = diff.toFixed(3);
+                        currentElev += diff;
+                        H = currentElev.toFixed(3);
+                    }
+                }
+                csvContent += `${row.point},${row.bs},${row.fs},${h},${H}\n`;
             }
-            csvContent += `${row.point},${row.backsight},${row.foresight},${h},${H}\n`;
         });
         
-        // 增加闭合差统计注释
-        const actW = document.getElementById('actual_w').innerText.replace(/\n/g,'').replace('mm',' mm');
-        const allW = document.getElementById('allowed_w').innerText.replace(/\n/g,'').replace('mm',' mm');
-        const res = document.getElementById('w_result').innerText;
         csvContent += `\n统计：总测站数: ${document.getElementById('station_count').innerText}\n`;
-        csvContent += `闭合差实测值: ${actW}\n`;
-        csvContent += `规范容许限差: ${allW}\n`;
-        csvContent += `最终判定结论: ${res}\n`;
+        csvContent += `闭合差实测值: ${document.getElementById('actual_w').innerText.replace(/\n/g,'').replace('mm',' mm')}\n`;
+        csvContent += `规范容许限差: ${document.getElementById('allowed_w').innerText.replace(/\n/g,'').replace('mm',' mm')}\n`;
+        csvContent += `判定结论: ${document.getElementById('w_result').innerText}\n`;
 
         const link = document.createElement("a");
         link.setAttribute("href", encodeURI(csvContent));
-        link.setAttribute("download", `水准计算与平差手簿_${new Date().toISOString().slice(0,10)}.csv`);
+        link.setAttribute("download", `水准计算簿_${new Date().toISOString().slice(0,10)}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     }
 
-    window.onload = function() {
-        toggleRouteType();
-        toggleLimitInput();
-        renderTable();
-    };
+    window.onload = function() { toggleMode(); toggleRouteType(); toggleLimitInput(); };
 </script>
 </body>
 </html>
